@@ -61,10 +61,10 @@ add_custom_target(
           ${CMAKE_CURRENT_BINARY_DIR}/walker/walker.xml
           <${CMAKE_CURRENT_SOURCE_DIR}/walker/walker.xml.patch
 
-  # softwalker
+  # softwalker - use modified version instead of dm_control walker
   COMMAND ${CMAKE_COMMAND} -E copy
-          ${dm_control_SOURCE_DIR}/dm_control/suite/walker.xml
-          ${CMAKE_CURRENT_BINARY_DIR}/softwalker/softwalker.xml
+          ${CMAKE_CURRENT_SOURCE_DIR}/softwalker/softwalker_modified.xml
+          ${CMAKE_CURRENT_BINARY_DIR}/softwalker/softwalker_modified.xml
 
   ## Menagerie models
   COMMAND ${CMAKE_COMMAND} -E copy
