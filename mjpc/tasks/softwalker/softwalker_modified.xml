@@ -3,8 +3,8 @@
 
   <statistic extent="2" center="0 0 1"/>
 
-  <!-- Include common assets for materials
-  <include file="../common.xml"/> -->
+  <!-- Include common assets for materials -->
+  <include file="../common.xml"/>
 
   <default>
     <joint damping=".1" armature="0.01" limited="true" solimplimit="0 .99 .01"/>

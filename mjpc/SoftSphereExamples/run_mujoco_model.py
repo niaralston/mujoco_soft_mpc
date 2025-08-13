@@ -137,6 +137,17 @@ def main():
         print(f"Number of geoms: {model.ngeom}")
         print(f"Timestep: {model.opt.timestep}")
         
+        # Capacity diagnostics (from <size>):
+        try:
+            # mjtNum is typically 8-byte float; show approx KB
+            approx_kb = model.nstack * 8 / 1024.0
+            print(f"nstack: {model.nstack} (~{approx_kb:.1f} KB if 8-byte mjtNum)")
+        except Exception:
+            print(f"nstack: {getattr(model, 'nstack', 'N/A')}")
+        print(f"nconmax: {getattr(model, 'nconmax', 'N/A')}  njmax: {getattr(model, 'njmax', 'N/A')}")
+        if hasattr(model.opt, 'iterations'):
+            print(f"solver iterations: {model.opt.iterations}  ls_iterations: {getattr(model.opt, 'ls_iterations', 'N/A')}")
+        
         # Check for flex components
         try:
             flex_elements = hasattr(model, 'nflex') and model.nflex > 0
@@ -173,7 +184,7 @@ def main():
                 
                 # Get the base name of the XML file without extension
                 base_name = os.path.splitext(os.path.basename(model_path))[0]
-                video_filename = f'{base_name}.avi'
+                video_filename = f'{base_name}.mp4'
                 
                 # Set up video file path
                 video_dir = os.path.dirname(os.path.abspath(__file__))
@@ -184,8 +195,8 @@ def main():
                 renderer = mujoco.Renderer(model, height=height, width=width)
                 renderer.update_scene(data, camera=viewer.cam)
                 
-                # Use XVID codec which is more widely supported
-                fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                # Use H264 codec for MP4
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                 out = cv2.VideoWriter(video_path, fourcc, fps, (width, height), isColor=True)
                 
                 if not out.isOpened():
@@ -197,6 +208,12 @@ def main():
             print("\nRunning simulation...")
             step_count = 0
             
+            # Track initial position
+            initial_x = data.qpos[0]
+            initial_y = data.qpos[1]
+            initial_z = data.qpos[2]
+            print(f"\nInitial position - X: {initial_x:.3f}, Y: {initial_y:.3f}, Z: {initial_z:.3f}")
+            
             while viewer.is_running() and data.time < sim_time:
                 # Run fixed number of steps
                 for _ in range(steps_per_frame):
@@ -205,6 +222,17 @@ def main():
                 
                 # Update viewer and record frame
                 viewer.sync()
+                
+                # Print position every second (adjust fps * 1 for frequency)
+                if step_count % (fps * 1) == 0:  # Print every second
+                    x = data.qpos[0]
+                    y = data.qpos[1]
+                    z = data.qpos[2]
+                    dx = x - initial_x
+                    dy = y - initial_y
+                    dz = z - initial_z
+                    print(f"Time: {data.time:.2f}s - Position (x,y,z): ({x:.3f}, {y:.3f}, {z:.3f})")
+                    print(f"Delta from start (dx,dy,dz): ({dx:.3f}, {dy:.3f}, {dz:.3f})")
                 
                 if RECORD_VIDEO and renderer:
                     renderer.update_scene(data, camera=viewer.cam)

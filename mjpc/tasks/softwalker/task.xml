@@ -1,5 +1,4 @@
 <mujoco model="Softwalker Locomotion">
-  <include file="../common.xml"/>
   <!-- modified from: https://github.com/google-deepmind/dm_control/blob/main/dm_control/suite/walker.xml -->
   <include file="inflatable_walker.xml" />
 
