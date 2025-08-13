@@ -4,6 +4,7 @@ import time
 import os
 import sys
 import cv2  # For video recording
+import math  # For converting radians to degrees
 from pathlib import Path
 
 # --- User Settings ---
@@ -208,11 +209,11 @@ def main():
             print("\nRunning simulation...")
             step_count = 0
             
-            # Track initial position
-            initial_x = data.qpos[0]
-            initial_y = data.qpos[1]
-            initial_z = data.qpos[2]
-            print(f"\nInitial position - X: {initial_x:.3f}, Y: {initial_y:.3f}, Z: {initial_z:.3f}")
+            # Track initial torso world position
+            torso_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "torso")
+            initial_torso_pos = data.xpos[torso_id].copy()
+            print(f"\nInitial torso world position - X: {initial_torso_pos[0]:.3f}, Y: {initial_torso_pos[1]:.3f}, Z: {initial_torso_pos[2]:.3f}")
+            print(f"Initial joint positions (rootz, rootx, rooty) - {data.qpos[0]:.3f}, {data.qpos[1]:.3f}, {math.degrees(data.qpos[2]):.1f}°")
             
             while viewer.is_running() and data.time < sim_time:
                 # Run fixed number of steps
@@ -225,14 +226,31 @@ def main():
                 
                 # Print position every second (adjust fps * 1 for frequency)
                 if step_count % (fps * 1) == 0:  # Print every second
-                    x = data.qpos[0]
-                    y = data.qpos[1]
-                    z = data.qpos[2]
-                    dx = x - initial_x
-                    dy = y - initial_y
-                    dz = z - initial_z
-                    print(f"Time: {data.time:.2f}s - Position (x,y,z): ({x:.3f}, {y:.3f}, {z:.3f})")
-                    print(f"Delta from start (dx,dy,dz): ({dx:.3f}, {dy:.3f}, {dz:.3f})")
+                    # Get current torso world position
+                    current_torso_pos = data.xpos[torso_id]
+                    torso_dx = current_torso_pos[0] - initial_torso_pos[0]
+                    torso_dy = current_torso_pos[1] - initial_torso_pos[1]
+                    torso_dz = current_torso_pos[2] - initial_torso_pos[2]
+                    
+                    # Also print joint positions for comparison
+                    joint_x = data.qpos[0]  # rootz
+                    joint_y = data.qpos[1]  # rootx  
+                    joint_rot = data.qpos[2]  # rooty (rotation)
+                    
+                    print(f"Time: {data.time:.2f}s")
+                    print(f"  Torso world pos: ({current_torso_pos[0]:.3f}, {current_torso_pos[1]:.3f}, {current_torso_pos[2]:.3f})")
+                    print(f"  Torso delta: ({torso_dx:.3f}, {torso_dy:.3f}, {torso_dz:.3f})")
+                    print(f"  Joint pos (z,x,rot): ({joint_x:.3f}, {joint_y:.3f}, {math.degrees(joint_rot):.1f}°)")
+                    print(f"  Contacts: {data.ncon}")
+                    
+                    # Debug: Print contact details for first few contacts
+                    if step_count % (fps * 5) == 0 and data.ncon > 0:  # Every 5 seconds
+                        print(f"    Contact details (first 5 of {data.ncon}):")
+                        for i in range(min(5, data.ncon)):
+                            contact = data.contact[i]
+                            geom1_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom1) or f"geom{contact.geom1}"
+                            geom2_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, contact.geom2) or f"geom{contact.geom2}"
+                            print(f"      {geom1_name} <-> {geom2_name}, dist: {contact.dist:.4f}")
                 
                 if RECORD_VIDEO and renderer:
                     renderer.update_scene(data, camera=viewer.cam)
