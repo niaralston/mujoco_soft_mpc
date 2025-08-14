@@ -1,8 +1,8 @@
 <mujoco model="Softwalker Locomotion">
   <!-- modified from: https://github.com/google-deepmind/dm_control/blob/main/dm_control/suite/walker.xml -->
-  <include file="inflatable_walker.xml" />
+  <include file="softwalker_modified.xml" />
 
-  <size memory="100K"/>
+  <size memory="1G"/>
 
   <custom>
     <!-- agent -->
