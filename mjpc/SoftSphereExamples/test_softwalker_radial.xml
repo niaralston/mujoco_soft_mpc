@@ -1,6 +1,6 @@
 <!-- Checkpoint 1 completed -->
 <mujoco model="Softwalker">
-  <option solver="CG" tolerance="1e-6" timestep="1e-3" integrator="implicitfast"/>
+  <option solver="Newton" tolerance="1e-6" timestep="1e-3" integrator="implicitfast"/>
 
   <size nstack="10000000"/>
 
@@ -33,11 +33,12 @@
     <material name="target_default" rgba=".6 .3 .3 1"/>
     <material name="target_highlight" rgba=".6 .3 .3 .4"/>
     <material name="site_material" rgba=".5 .5 .5 .3"/>
+    <material name="force_visual" rgba="1 0 0 0.8"/>
   </asset>
 
   <default>
     <joint damping=".1" armature="0.01" limited="true" solimplimit="0 .99 .01"/>
-    <geom contype="1" conaffinity="0" friction=".7 .1 .1"/>
+    <geom contype="1" conaffinity="0" friction="1.0 0.5 0.5" condim="6"/>
     <motor ctrlrange="-1 1" ctrllimited="true"/>
     <site size="0.01"/>
     <default class="walker">
@@ -57,10 +58,10 @@
       <light name="light" pos="0 0 2" mode="trackcom"/>
       <camera name="floating"  pos="-2 0 1" xyaxes="0 -1 0 .5 0 1" mode="trackcom" fovy="90"/>
       <camera name="egocentric"  pos=".25 0 .11" xyaxes="0 -1 0 0 0 1" fovy="90" />
-      <joint name="rootz" axis="0 0 1" type="slide" limited="false" armature="0" damping="0"/>
-      <joint name="rootx" axis="1 0 0" type="slide" limited="false" armature="0" damping="0"/>
-      <joint name="rooty" axis="0 1 0" type="hinge" limited="false" armature="0" damping="0"/>
-      <geom name="torso" size="0.25 0.3" mass="2.0" zaxis="0 1 0"/>
+      <joint name="rootz" axis="0 0 1" type="slide" limited="false" armature="0" damping="0.1"/>
+      <joint name="rootx" axis="1 0 0" type="slide" limited="false" armature="0" damping="0.1"/>
+      <joint name="rooty" axis="0 1 0" type="hinge" limited="true" range="-2 2" armature="0.1" damping="2.0"/>
+      <geom name="torso" size="0.25 0.3" mass="2.0" zaxis="0 1 0" pos="0 0 0.1"/>
       <site name="torso_site" pos="0 0 0" size="0.01"/>
       <body name="right_thigh" pos="0 -.3 -0.3" childclass="walker">
         <joint name="right_hip" range="-20 100" damping=".1" armature="0.01"/>
@@ -73,6 +74,10 @@
             <edge equality="true" solimp="0 0.9 0.01" solref=".02 1"/>
             <contact selfcollide="none" internal="false"/>
           </flexcomp>
+          <!-- Debug sites for contact visualization -->
+          <site name="right_foot_center" pos="0 0 -0.6" size="0.02" material="force_visual"/>
+          <site name="right_foot_front" pos="0.1 0 -0.6" size="0.02" material="force_visual"/>
+          <site name="right_foot_back" pos="-0.1 0 -0.6" size="0.02" material="force_visual"/>
         </body>
       </body>
       <body name="left_thigh" pos="0 .3 -0.3" childclass="walker">
@@ -86,6 +91,10 @@
             <edge equality="true" solimp="0 0.9 0.01" solref=".02 1"/>
             <contact selfcollide="none" internal="false"/>
           </flexcomp>
+          <!-- Debug sites for contact visualization -->
+          <site name="left_foot_center" pos="0 0 -0.6" size="0.02" material="force_visual"/>
+          <site name="left_foot_front" pos="0.1 0 -0.6" size="0.02" material="force_visual"/>
+          <site name="left_foot_back" pos="-0.1 0 -0.6" size="0.02" material="force_visual"/>
         </body>
       </body>
     </body>
@@ -96,5 +105,9 @@
     <motor name="right_knee" joint="right_knee" gear="50"/>
     <motor name="left_hip" joint="left_hip" gear="100"/>
     <motor name="left_knee" joint="left_knee" gear="50"/>
+    <!-- Passive stabilizing force to prevent torso rolling -->
+    <general name="torso_stabilizer" joint="rooty" dyntype="none" gaintype="fixed" gainprm="5.0" biastype="none" biasprm="0"/>
   </actuator>
+
+
 </mujoco> 
